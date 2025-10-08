@@ -6,4 +6,13 @@ pub struct User {
     pub nim: String,
 }
 
-// You will add other structs like Course, Topic, etc., here later.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Course {
+    pub id: String,
+    pub code: String,
+    pub name: String,
+    pub credits: u8,
+    pub lecturer: String,
+    pub academic_year: String,
+    pub href: String,
+}

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use scraper::{Html, Selector};
 use crate::error::{Result, ScraperError};
-use crate::models::User;
+use crate::models::{Course, User};
 use crate::parsers;
 use reqwest::cookie::Jar;
 use std::sync::Arc;
@@ -98,5 +98,10 @@ impl SpotClient {
     pub async fn get_user_profile(&self) -> Result<User> {
         let html_content = self.get_html("/mhs").await?;
         parsers::user::parse_user_from_html(&html_content)
+    }
+
+    pub async fn get_courses(&self) -> Result<Vec<Course>> {
+        let html_content = self.get_html("/mhs").await?;
+        parsers::courses::parse_courses_from_html(&html_content)
     }
 }
