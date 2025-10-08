@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use scraper::{Html, Selector};
 use crate::error::{Result, ScraperError};
-use crate::models::{Course, User};
+use crate::models::{Course, DetailCourse, TopicDetail, TopicInfo, User};
 use crate::parsers;
 use reqwest::cookie::Jar;
 use std::sync::Arc;
@@ -104,4 +104,28 @@ impl SpotClient {
         let html_content = self.get_html("/mhs").await?;
         parsers::courses::parse_courses_from_html(&html_content)
     }
+
+    pub async fn get_course_detail(&self, course: &Course) -> Result<DetailCourse> {
+        // The href for the detail page is already stored in the Course struct
+        let html_content: String = self.get_html(&course.href).await?;
+        parsers::course_detail::parse_course_detail_from_html(&html_content, course.clone())
+    }
+
+      pub async fn get_topic_detail(&self, topic_info: &TopicInfo) -> Result<TopicDetail> {
+        let href = topic_info.href.as_ref().ok_or_else(|| {
+            ScraperError::ParsingError("TopicInfo tidak memiliki href yang valid".to_string())
+        })?;
+
+        let course_id = topic_info.href.as_ref()
+            .and_then(|h| h.split('/').nth(3))
+            .ok_or_else(|| ScraperError::ParsingError("Tidak bisa mendapatkan course_id dari href".to_string()))?;
+
+        let topic_id = topic_info.id.as_ref().ok_or_else(|| {
+            ScraperError::ParsingError("TopicInfo tidak memiliki id yang valid".to_string())
+        })?;
+
+        let html_content = self.get_html(href).await?;
+        parsers::topic_detail::parse_topic_detail_from_html(&html_content, topic_id, course_id)
+    }
+
 }
