@@ -18,7 +18,7 @@ fn extract_course_from_row(row: ElementRef) -> Result<Course> {
         .and_then(|a| a.value().attr("href"))
         .ok_or_else(|| ScraperError::ElementNotFound("Link mata kuliah (href)".to_string()))?;
 
-    let id = href.split('/').last().unwrap_or("").to_string();
+    let id = href.split('/').last().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
 
     let course = Course {
         id,

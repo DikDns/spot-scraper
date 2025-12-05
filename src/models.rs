@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -8,7 +9,7 @@ pub struct User {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Course {
-    pub id: String,
+    pub id: u64,
     pub code: String,
     pub name: String,
     pub credits: u8,
@@ -17,17 +18,17 @@ pub struct Course {
     pub href: String,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Rps {
-    pub id: Option<String>,
+    pub id: Option<u64>,
     pub href: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TopicInfo {
-    pub id: Option<String>,
-    pub access_time: Option<String>,
+    pub id: Option<u64>,
+    pub course_id: Option<u64>,
+    pub access_time: Option<NaiveDateTime>,
     pub is_accessible: bool,
     pub href: Option<String>,
 }
@@ -43,7 +44,7 @@ pub struct DetailCourse {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Content {
-    pub id: String,
+    pub id: u32,
     pub youtube_id: Option<String>,
     pub raw_html: String,
 }
@@ -58,34 +59,34 @@ pub enum TaskStatus {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Answer {
-    pub id: String,
+    pub id: Option<u64>,
     pub content: String,
     pub file_href: Option<String>,
     pub is_graded: bool,
     pub lecturer_notes: String,
-    pub score: f32, // Pakai f32 untuk nilai yang mungkin desimal
-    pub date_submitted: String, // Simpan sebagai string dulu
+    pub score: f32,
+    pub date_submitted: Option<NaiveDateTime>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
-    pub id: String,
-    pub course_id: String,
-    pub topic_id: String,
-    pub token: String, // Untuk submit/delete
+    pub id: Option<u64>,
+    pub course_id: u64,
+    pub topic_id: u64,
+    pub token: String,
     pub title: String,
     pub description: String,
     pub file: Option<String>,
-    pub start_date: Option<String>,
-    pub due_date: Option<String>,
+    pub start_date: Option<NaiveDateTime>,
+    pub due_date: Option<NaiveDateTime>,
     pub status: TaskStatus,
     pub answer: Option<Answer>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TopicDetail {
-    pub id: String,
-    pub access_time: Option<String>,
+    pub id: u64,
+    pub access_time: Option<NaiveDateTime>,
     pub is_accessible: bool,
     pub href: String,
     pub description: Option<String>,

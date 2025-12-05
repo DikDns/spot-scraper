@@ -1,5 +1,6 @@
 // tests/integration_test.rs
 
+use dotenvy::dotenv;
 use spot_scraper::{Result, SpotClient};
 use std::env;
 use std::fs::File;
@@ -15,13 +16,14 @@ use std::io::Write;
 /// SPOT_NIM="your_nim" SPOT_PASSWORD="your_password" cargo test -- --nocapture
 #[tokio::test]
 async fn test_full_login_and_scrape_flow() -> Result<()> {
+    dotenv().ok();
     // --- SETUP: Create a log file to store all output ---
-    let mut log_file = File::create("test_output.log")
-        .expect("Could not create log file.");
+    let mut log_file = File::create("test_output.log").expect("Could not create log file.");
 
     // --- SETUP: Load credentials from environment variables ---
     let nim = env::var("SPOT_NIM").expect("ERROR: SPOT_NIM environment variable not set.");
-    let password = env::var("SPOT_PASSWORD").expect("ERROR: SPOT_PASSWORD environment variable not set.");
+    let password =
+        env::var("SPOT_PASSWORD").expect("ERROR: SPOT_PASSWORD environment variable not set.");
 
     writeln!(log_file, "--- Starting Full Scraper Integration Test ---").unwrap();
 
@@ -42,38 +44,66 @@ async fn test_full_login_and_scrape_flow() -> Result<()> {
     // --- STEP 3: Fetch Course List ---
     writeln!(log_file, "\n[3/5] Fetching course list...").unwrap();
     let courses = client.get_courses().await?;
-    writeln!(log_file, "[3/5] Successfully fetched {} courses.", courses.len()).unwrap();
+    writeln!(
+        log_file,
+        "[3/5] Successfully fetched {} courses.",
+        courses.len()
+    )
+    .unwrap();
     assert!(!courses.is_empty(), "Course list should not be empty");
 
     // --- STEP 4 & 5: Scrape Details for the First Course and First Topic ---
     // We only test the first course to keep the integration test focused and fast.
     if let Some(first_course) = courses.first() {
         // --- STEP 4: Fetch Course Detail ---
-        writeln!(log_file, "\n--------------------------------------------------").unwrap();
-        writeln!(log_file, "[4/5] Fetching details for first course: {}...", first_course.name).unwrap();
+        writeln!(
+            log_file,
+            "\n--------------------------------------------------"
+        )
+        .unwrap();
+        writeln!(
+            log_file,
+            "[4/5] Fetching details for first course: {}...",
+            first_course.name
+        )
+        .unwrap();
         let course_detail = client.get_course_detail(first_course).await?;
         writeln!(log_file, "[4/5] Successfully fetched course details.").unwrap();
         writeln!(log_file, "{:#?}", course_detail).unwrap();
-        assert_eq!(course_detail.course_info.id, first_course.id, "Course ID mismatch");
+        assert_eq!(
+            course_detail.course_info.id, first_course.id,
+            "Course ID mismatch"
+        );
 
         // --- STEP 5: Fetch Topic Detail ---
-        writeln!(log_file, "\n[5/5] Fetching details for the first accessible topic...").unwrap();
+        writeln!(
+            log_file,
+            "\n[5/5] Fetching details for the first accessible topic..."
+        )
+        .unwrap();
         if let Some(first_topic) = course_detail.topics.iter().find(|t| t.is_accessible) {
             let topic_detail = client.get_topic_detail(first_topic).await?;
             writeln!(log_file, "[5/5] Successfully fetched topic details.").unwrap();
             writeln!(log_file, "{:#?}", topic_detail).unwrap();
 
-            // Validate that the fetched topic ID matches the one we requested
-            assert_eq!(&topic_detail.id, first_topic.id.as_ref().unwrap());
+            assert_eq!(topic_detail.id, first_topic.id.unwrap());
         } else {
-            writeln!(log_file, "[5/5] No accessible topics found in this course to test.").unwrap();
+            writeln!(
+                log_file,
+                "[5/5] No accessible topics found in this course to test."
+            )
+            .unwrap();
         }
     } else {
         // This case should not happen if the previous assert passed, but it's good practice.
         panic!("Could not get the first course to test detail scraping.");
     }
 
-    writeln!(log_file, "\n--- Integration Test Completed Successfully ---").unwrap();
+    writeln!(
+        log_file,
+        "\n--- Integration Test Completed Successfully ---"
+    )
+    .unwrap();
     println!("Test finished. Please check 'test_output.log' for the detailed results.");
 
     Ok(())

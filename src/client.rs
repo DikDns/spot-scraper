@@ -1,13 +1,14 @@
-use std::collections::HashMap;
-use scraper::{Html, Selector};
 use crate::error::{Result, ScraperError};
 use crate::models::{Course, DetailCourse, TopicDetail, TopicInfo, User};
 use crate::parsers;
 use reqwest::cookie::Jar;
-use std::sync::Arc;
 use reqwest::header::{HeaderMap, USER_AGENT};
+use scraper::{Html, Selector};
+use std::collections::HashMap;
+use std::sync::Arc;
 
-const SSO_LOGIN_PAGE_URL: &str = "https://sso.upi.edu/cas/login?service=https://spot.upi.edu/beranda";
+const SSO_LOGIN_PAGE_URL: &str =
+    "https://sso.upi.edu/cas/login?service=https://spot.upi.edu/beranda";
 
 pub struct SpotClient {
     client: reqwest::Client,
@@ -66,7 +67,9 @@ impl SpotClient {
         params.insert("_eventId", "submit");
 
         // --- CHANGE 2: Post to the full URL including the '?service=...' part ---
-        let response = self.client.post(login_action_url)
+        let response = self
+            .client
+            .post(login_action_url)
             .form(&params)
             .send()
             .await?;
@@ -76,7 +79,10 @@ impl SpotClient {
         if final_url.host_str() != Some("spot.upi.edu") {
             let error_body = response.text().await.unwrap_or_default();
             std::fs::write("login_fail.html", error_body).ok();
-            println!("Login failed. Check login_fail.html for details. The final URL was: {}", final_url);
+            println!(
+                "Login failed. Check login_fail.html for details. The final URL was: {}",
+                final_url
+            );
 
             return Err(ScraperError::AuthenticationFailed);
         }
@@ -111,21 +117,19 @@ impl SpotClient {
         parsers::course_detail::parse_course_detail_from_html(&html_content, course.clone())
     }
 
-      pub async fn get_topic_detail(&self, topic_info: &TopicInfo) -> Result<TopicDetail> {
+    pub async fn get_topic_detail(&self, topic_info: &TopicInfo) -> Result<TopicDetail> {
         let href = topic_info.href.as_ref().ok_or_else(|| {
             ScraperError::ParsingError("TopicInfo tidak memiliki href yang valid".to_string())
         })?;
 
-        let course_id = topic_info.href.as_ref()
-            .and_then(|h| h.split('/').nth(3))
-            .ok_or_else(|| ScraperError::ParsingError("Tidak bisa mendapatkan course_id dari href".to_string()))?;
-
-        let topic_id = topic_info.id.as_ref().ok_or_else(|| {
+        let course_id = topic_info.course_id.ok_or_else(|| {
+            ScraperError::ParsingError("TopicInfo tidak memiliki course_id yang valid".to_string())
+        })?;
+        let topic_id = topic_info.id.ok_or_else(|| {
             ScraperError::ParsingError("TopicInfo tidak memiliki id yang valid".to_string())
         })?;
 
         let html_content = self.get_html(href).await?;
         parsers::topic_detail::parse_topic_detail_from_html(&html_content, topic_id, course_id)
     }
-
 }
